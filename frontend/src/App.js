@@ -30,7 +30,7 @@ function App() {
     <div className="App">
       {/* Navigation */}
       <nav
-        className="sticky top-0 z-40 max-content py-5 flex items-center gap-6 mb-4"
+        className="sticky top-0 z-40 max-content py-4 flex items-center gap-6"
         style={{ backgroundColor: 'var(--cream)', borderBottom: '1px solid var(--border)' }}
       >
         <h1 className="playfair text-xl font-bold mr-auto" style={{ color: 'var(--saffron)' }}>

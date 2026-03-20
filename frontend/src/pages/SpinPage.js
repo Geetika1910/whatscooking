@@ -340,7 +340,7 @@ function SpinPage() {
   const displayPantry = pantryChips.length > 0 ? pantryChips : fallbackPantry.map(name => ({ name }));
   
   return (
-    <div className="max-content pt-6 pb-8" data-testid="spin-page">
+    <div className="max-content py-8" data-testid="spin-page">
       <div className="mb-6">
         <h1 className="playfair text-4xl sm:text-5xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
           What to cook today?
