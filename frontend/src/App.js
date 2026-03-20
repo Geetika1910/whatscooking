@@ -3,6 +3,7 @@ import './App.css';
 import SpinPage from './pages/SpinPage';
 import RecipesPage from './pages/RecipesPage';
 import InventoryPage from './pages/InventoryPage';
+import FavouritesPage from './pages/FavouritesPage';
 import AuthModal from './components/AuthModal';
 
 function App() {
@@ -36,7 +37,7 @@ function App() {
         <h1 className="playfair text-xl font-bold mr-auto" style={{ color: 'var(--saffron)' }}>
           What's Cooking?
         </h1>
-        {['Spin', 'Recipes', 'Inventory'].map(page => (
+        {['Spin', 'Recipes', 'Favourites', 'Inventory'].map(page => (
           <button
             key={page}
             data-testid={`nav-${page.toLowerCase()}`}
@@ -78,6 +79,7 @@ function App() {
       {/* Page content */}
       {currentPage === 'Spin' && <SpinPage />}
       {currentPage === 'Recipes' && <RecipesPage />}
+      {currentPage === 'Favourites' && <FavouritesPage />}
       {currentPage === 'Inventory' && <InventoryPage />}
       
       {/* Auth Modal */}

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Storage } from '../utils/storage';
 import { defaultInventory } from '../utils/defaultInventory';
 import { statusOf, getStatusColor } from '../utils/itemStatus';
+import BookmarkButton from '../components/BookmarkButton';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -99,6 +100,10 @@ function SpinPage() {
   // Q5 - People count
   const [peopleCount, setPeopleCount] = useState(4);
   
+  // Optional - I already know what I want
+  const [showKnownDish, setShowKnownDish] = useState(false);
+  const [knownDish, setKnownDish] = useState('');
+  
   // Results
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -148,6 +153,24 @@ function SpinPage() {
     setRecipe(null);
     setSideDish(null);
     
+    // If user typed a known dish, skip spin and go directly to recipe
+    if (knownDish.trim()) {
+      setResult({
+        id: Date.now(),
+        dish: knownDish.trim(),
+        time: '—',
+        reason: 'Your choice!',
+        tags: [],
+        category: 'dal',
+      });
+      setLoading(false);
+      // Automatically fetch recipe
+      setTimeout(() => {
+        handleFullRecipe(knownDish.trim());
+      }, 100);
+      return;
+    }
+    
     try {
       const payload = {
         time: selectedTime,
@@ -160,7 +183,12 @@ function SpinPage() {
       };
       
       const response = await axios.post(`${API}/spin`, payload);
-      setResult(response.data);
+      const dishData = response.data;
+      setResult({
+        ...dishData,
+        id: Date.now(),
+        name: dishData.dish,
+      });
     } catch (err) {
       console.error('Spin error:', err);
       // Use fallback
@@ -169,7 +197,12 @@ function SpinPage() {
         {dish: "Aloo Paratha", time: "30 min", reason: "Flour and potatoes are there — this writes itself.", tags: ["Soul food", "Quick", "Weekend energy"], category: "roti"},
         {dish: "Poha", time: "15 min", reason: "The quickest breakfast that still feels like a proper meal.", tags: ["Super quick", "Light", "Easy cleanup"], category: "snack"}
       ];
-      setResult(fallbacks[Math.floor(Math.random() * fallbacks.length)]);
+      const fallback = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      setResult({
+        ...fallback,
+        id: Date.now(),
+        name: fallback.dish,
+      });
     } finally {
       setLoading(false);
     }
@@ -348,6 +381,7 @@ function SpinPage() {
         <p className="text-base" style={{ color: 'var(--muted)' }}>5 questions. One perfect answer.</p>
       </div>
       
+      <div style={{ opacity: knownDish.trim() ? 0.4 : 1, transition: 'opacity 0.3s ease' }}>
       {/* Q1 - Meal type */}
       <div className="mb-6">
         <label className="block text-xs uppercase tracking-wide font-semibold mb-3" style={{ color: 'var(--subtle)' }}>
@@ -522,6 +556,47 @@ function SpinPage() {
           <span className="text-sm" style={{ color: 'var(--subtle)' }}>people</span>
         </div>
       </div>
+      </div>
+      
+      {/* Optional - I already know what I want */}
+      <div className="mb-6">
+        {!showKnownDish ? (
+          <button
+            data-testid="show-known-dish"
+            onClick={() => setShowKnownDish(true)}
+            className="text-sm font-medium"
+            style={{ color: 'var(--saffron)' }}
+          >
+            Already know what you want to make? →
+          </button>
+        ) : (
+          <div className="slide-up">
+            <label className="block text-xs uppercase tracking-wide font-semibold mb-2" style={{ color: 'var(--subtle)' }}>
+              Optional — I already know what I want
+            </label>
+            <input
+              data-testid="known-dish-input"
+              type="text"
+              value={knownDish}
+              onChange={(e) => setKnownDish(e.target.value)}
+              placeholder="e.g. dal, salad, pasta, dahi rice..."
+              className="w-full px-3 py-2 text-sm rounded-lg"
+              style={{ border: '1px solid var(--border-strong)' }}
+            />
+            <button
+              data-testid="hide-known-dish"
+              onClick={() => {
+                setShowKnownDish(false);
+                setKnownDish('');
+              }}
+              className="text-xs mt-2"
+              style={{ color: 'var(--muted)' }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
       
       {/* Spin button */}
       <button
@@ -548,7 +623,10 @@ function SpinPage() {
         <div data-testid="result-card" className="mt-6 rounded-2xl overflow-hidden slide-up" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
           <div style={{ height: '5px', backgroundColor: getCategoryColor(result.category) }} />
           <div className="p-5">
-            <h2 className="playfair text-xl font-bold mb-2" style={{ color: 'var(--ink)' }}>{result.dish}</h2>
+            <div className="flex items-start justify-between mb-2">
+              <h2 className="playfair text-xl font-bold flex-1" style={{ color: 'var(--ink)' }}>{result.dish}</h2>
+              <BookmarkButton dish={{ id: result.id, name: result.dish, category: result.category, time: result.time }} testId="bookmark-result" />
+            </div>
             <p className="text-xs mb-3" style={{ color: 'var(--subtle)' }}>
               {result.time} · {peopleCount} {peopleCount === 1 ? 'person' : 'people'}
             </p>

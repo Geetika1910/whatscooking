@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Storage } from '../utils/storage';
+import BookmarkButton from '../components/BookmarkButton';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -96,7 +97,11 @@ function RecipesPage() {
         spice_level: preferences.spice_level,
         available_ingredients: inStock,
       });
-      setSuggestions(response.data.suggestions);
+      const suggestions = response.data.suggestions.map((s, idx) => ({
+        ...s,
+        id: Date.now() + idx,
+      }));
+      setSuggestions(suggestions);
     } catch (err) {
       console.error('Meal suggestions error:', err);
       // Use fallback
@@ -105,7 +110,8 @@ function RecipesPage() {
         Lunch: [{name: "Dal Chawal", time: "25 min", tags: ["Comfort", "Complete"], category: "dal", why: "Classic balanced lunch combo"}, {name: "Roti Sabzi", time: "20 min", tags: ["Light", "Nutritious"], category: "roti", why: "Simple wholesome lunch"}, {name: "Rajma", time: "40 min", tags: ["Protein", "Filling"], category: "dal", why: "Protein-rich satisfying meal"}, {name: "Pulao", time: "30 min", tags: ["One-pot", "Flavorful"], category: "rice", why: "Easy one-pot complete meal"}],
         Dinner: [{name: "Khichdi", time: "20 min", tags: ["Light", "Comfort"], category: "rice", why: "Light and easy to digest"}, {name: "Palak Paneer", time: "30 min", tags: ["Protein", "Nutritious"], category: "sabzi", why: "Nutritious protein-rich dinner"}, {name: "Moong Dal", time: "20 min", tags: ["Light", "Protein"], category: "dal", why: "Easy protein-packed dinner"}, {name: "Vegetable Dalia", time: "25 min", tags: ["Healthy", "Fiber"], category: "healthy", why: "Fiber-rich healthy dinner option"}]
       };
-      setSuggestions(fallbacks[mealType] || []);
+      const fallbackData = fallbacks[mealType] || fallbacks["Lunch"];
+      setSuggestions(fallbackData.map((s, idx) => ({ ...s, id: Date.now() + idx })));
     } finally {
       setLoading(false);
     }
@@ -151,31 +157,38 @@ function RecipesPage() {
   
   const RecipeMiniCard = ({ dish, onClick }) => {
     return (
-      <button
-        data-testid={`recipe-card-${dish.name}`}
-        onClick={onClick}
-        className="w-full text-left rounded-2xl overflow-hidden"
-        style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}
-      >
-        <div style={{ height: '4px', backgroundColor: getCategoryColor(dish.category) }} />
-        <div className="p-3">
-          <h4 className="text-sm font-bold mb-1" style={{ color: 'var(--ink)' }}>{dish.name}</h4>
-          <p className="text-xs mb-2" style={{ color: 'var(--subtle)' }}>
-            {dish.time} · {dish.why}
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {dish.tags && dish.tags.slice(0, 2).map((tag, idx) => (
-              <span
-                key={idx}
-                className="text-[10px] px-2 py-0.5 rounded-full"
-                style={{ backgroundColor: 'var(--coriander-light)', color: 'var(--coriander)' }}
-              >
-                {tag}
-              </span>
-            ))}
+      <div className="relative">
+        <button
+          data-testid={`recipe-card-${dish.name}`}
+          onClick={onClick}
+          className="w-full text-left rounded-2xl overflow-hidden"
+          style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}
+        >
+          <div style={{ height: '4px', backgroundColor: getCategoryColor(dish.category) }} />
+          <div className="p-3">
+            <div className="flex items-start justify-between">
+              <h4 className="text-sm font-bold mb-1 flex-1" style={{ color: 'var(--ink)' }}>{dish.name}</h4>
+            </div>
+            <p className="text-xs mb-2" style={{ color: 'var(--subtle)' }}>
+              {dish.time} · {dish.why}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {dish.tags && dish.tags.slice(0, 2).map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="text-[10px] px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: 'var(--coriander-light)', color: 'var(--coriander)' }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
+        </button>
+        <div className="absolute top-2 right-2">
+          <BookmarkButton dish={{ id: dish.id, name: dish.name, category: dish.category, time: dish.time }} testId={`bookmark-recipe-${dish.name}`} />
         </div>
-      </button>
+      </div>
     );
   };
   
