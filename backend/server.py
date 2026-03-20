@@ -90,6 +90,7 @@ class SpinRequest(BaseModel):
     ingredients: List[str]
     people: int
     meal_time: str
+    dish_anchor: Optional[str] = None
 
 class RecipeRequest(BaseModel):
     dish: str
@@ -263,8 +264,15 @@ Mood: {req.mood}
         
         prompt += f"""Ingredients at home: {', '.join(req.ingredients)}
 Meal time: {req.meal_time}, Serving: {req.people} people
-Suggest ONE Indian home-cooked dish. Return ONLY valid JSON (no markdown):
-{{"dish":"name","time":"X min","reason":"one warm sentence why this fits","tags":["tag1","tag2","tag3"],"category":"dal|roti|rice|sabzi|snack|sweet|fasting|healthy"}}"""
+"""
+        
+        if req.dish_anchor:
+            prompt += f"""The user wants to make something related to "{req.dish_anchor}". Suggest ONE specific variety or style of {req.dish_anchor} that fits the above context (time, mood, ingredients). Make it a creative, specific variation rather than generic.
+Return ONLY valid JSON (no markdown):
+{{"dish":"specific variety name","time":"X min","reason":"one warm sentence why this fits","tags":["tag1","tag2","tag3"],"category":"dal|roti|rice|sabzi|snack|sweet|fasting|healthy"}}"""
+        else:
+            prompt += """Suggest ONE Indian home-cooked dish. Return ONLY valid JSON (no markdown):
+{"dish":"name","time":"X min","reason":"one warm sentence why this fits","tags":["tag1","tag2","tag3"],"category":"dal|roti|rice|sabzi|snack|sweet|fasting|healthy"}"""
         
         response = await call_claude(prompt, f"spin-{uuid.uuid4()}")
         

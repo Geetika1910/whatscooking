@@ -1,23 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Storage } from '../utils/storage';
+import IngredientsList from '../components/IngredientsList';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function FavouritesPage() {
   const [favourites, setFavourites] = useState([]);
+  const [inventory, setInventory] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [recipeDetails, setRecipeDetails] = useState(null);
   const [loadingRecipe, setLoadingRecipe] = useState(false);
 
   useEffect(() => {
     loadFavourites();
+    loadInventory();
   }, []);
 
   const loadFavourites = () => {
     const favs = Storage.getFavourites();
     setFavourites(favs || []);
+  };
+  
+  const loadInventory = async () => {
+    try {
+      const response = await axios.get(`${API}/inventory`);
+      setInventory(response.data);
+    } catch (err) {
+      const localInv = Storage.getInventory();
+      if (localInv) setInventory(localInv);
+    }
   };
 
   const openRecipe = async (dish) => {
@@ -127,15 +140,7 @@ function FavouritesPage() {
                     Prep: {recipeDetails.prep_time} · Cook: {recipeDetails.cook_time}
                   </p>
 
-                  <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--ink)' }}>Ingredients</h4>
-                  <div className="mb-4">
-                    {recipeDetails.ingredients.map((ing, idx) => (
-                      <div key={idx} className="flex justify-between py-1 text-sm">
-                        <span style={{ color: 'var(--muted)' }}>{ing.name}</span>
-                        <span className="font-semibold" style={{ color: 'var(--muted)' }}>{ing.qty}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <IngredientsList ingredients={recipeDetails.ingredients} inventory={inventory} />
 
                   <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--ink)' }}>Method</h4>
                   <div className="mb-4">

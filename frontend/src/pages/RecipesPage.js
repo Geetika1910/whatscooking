@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Storage } from '../utils/storage';
 import BookmarkButton from '../components/BookmarkButton';
+import IngredientsList from '../components/IngredientsList';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -318,15 +319,7 @@ function RecipesPage() {
                     Prep: {recipeDetails.prep_time} · Cook: {recipeDetails.cook_time}
                   </p>
                   
-                  <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--ink)' }}>Ingredients</h4>
-                  <div className="mb-4">
-                    {recipeDetails.ingredients.map((ing, idx) => (
-                      <div key={idx} className="flex justify-between py-1 text-sm">
-                        <span style={{ color: 'var(--muted)' }}>{ing.name}</span>
-                        <span className="font-semibold" style={{ color: 'var(--muted)' }}>{ing.qty}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <IngredientsList ingredients={recipeDetails.ingredients} inventory={inventory} />
                   
                   <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--ink)' }}>Method</h4>
                   <div className="mb-4">
