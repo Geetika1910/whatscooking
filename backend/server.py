@@ -30,7 +30,7 @@ api_router = APIRouter(prefix="/api")
 
 # Initialize Claude chat
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
-JWT_SECRET = os.environ.get('JWT_SECRET', 'whats-cooking-secret-key-change-in-production')
+JWT_SECRET = os.environ.get('JWT_SECRET')
 JWT_ALGORITHM = 'HS256'
 
 # Models
