@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --saffron: #E8590C;
+  --saffron-light: #FDF0E8;
+  --turmeric: #D4870A;
+  --turmeric-light: #FEF6E4;
+  --coriander: #3A7D44;
+  --coriander-light: #EAF4EB;
+  --cardamom: #6B3FA0;
+  --cardamom-light: #F2EBF9;
+  --mint: #1A7D6B;
+  --mint-light: #E4F5F2;
+  --ink: #1A1208;
+  --muted: #6B5E52;
+  --subtle: #A89888;
+  --cream: #FDF8F3;
+  --paper: #FAF4EC;
+  --border: rgba(90,60,30,0.12);
+  --border-strong: rgba(90,60,30,0.22);
+}
+
+body {
+  margin: 0;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--cream);
+  color: var(--ink);
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at 80% 20%, rgba(232,89,12,0.06), transparent 60%),
+    radial-gradient(ellipse at 20% 80%, rgba(212,135,10,0.05), transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+.playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+.slide-up {
+  animation: slideUp 0.35s ease forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--border) 0%,
+    rgba(90,60,30,0.18) 50%,
+    var(--border) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Smooth transitions for interactive elements */
+button {
+  transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+input, select {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Toast animations */
+.toast-enter {
+  animation: toastSlide 0.35s ease forwards;
+}
+
+@keyframes toastSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-exit {
+  animation: toastFade 0.4s ease forwards;
+}
+
+@keyframes toastFade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

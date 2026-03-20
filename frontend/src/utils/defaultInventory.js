@@ -1,0 +1,15 @@
+export const defaultInventory = [
+  {id:1,  name:'Toor Dal',  cat:'Dals',       qty:500,  unit:'g',   threshold:100, expiry:'2026-06-01'},
+  {id:2,  name:'Wheat Flour',cat:'Grains',    qty:2000, unit:'g',   threshold:400, expiry:'2026-08-15'},
+  {id:3,  name:'Rice',      cat:'Grains',      qty:1000, unit:'g',   threshold:200, expiry:'2026-12-01'},
+  {id:4,  name:'Potato',    cat:'Vegetables',  qty:6,    unit:'pcs', threshold:2,   expiry:'2026-03-28'},
+  {id:5,  name:'Onion',     cat:'Vegetables',  qty:4,    unit:'pcs', threshold:2,   expiry:'2026-04-10'},
+  {id:6,  name:'Tomato',    cat:'Vegetables',  qty:3,    unit:'pcs', threshold:2,   expiry:'2026-03-25'},
+  {id:7,  name:'Paneer',    cat:'Dairy',       qty:200,  unit:'g',   threshold:100, expiry:'2026-03-23'},
+  {id:8,  name:'Yogurt',    cat:'Dairy',       qty:400,  unit:'g',   threshold:100, expiry:'2026-03-22'},
+  {id:9,  name:'Poha',      cat:'Dry Staples', qty:300,  unit:'g',   threshold:60,  expiry:'2026-07-01'},
+  {id:10, name:'Chickpea Flour',cat:'Dry Staples',qty:150,unit:'g', threshold:60,  expiry:'2026-05-01'},
+  {id:11, name:'Turmeric',  cat:'Spices',      qty:80,   unit:'g',   threshold:20,  expiry:'2026-09-01'},
+  {id:12, name:'Cumin',     cat:'Spices',      qty:40,   unit:'g',   threshold:10,  expiry:'2026-09-01'},
+  {id:13, name:'Eggs',      cat:'Other',       qty:0,    unit:'pcs', threshold:2,   expiry:''},
+];

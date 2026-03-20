@@ -1,0 +1,10 @@
+.App {
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+.max-content {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
