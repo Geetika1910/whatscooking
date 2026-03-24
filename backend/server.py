@@ -133,7 +133,7 @@ class MealSuggestionsRequest(BaseModel):
 
 async def call_llm(prompt: str, session_id: str = "default") -> str:
     try:
-        model = os.environ.get("LLM_MODEL", "llama-3.1-70b-versatile")
+        model = os.environ.get("LLM_MODEL", "openai/gpt-oss-20b")
 
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {
