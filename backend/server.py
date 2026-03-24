@@ -9,10 +9,13 @@ from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+
 import json
 import bcrypt
 import jwt
+import requests
+
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -29,7 +32,7 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # Initialize Claude chat
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+
 JWT_SECRET = os.environ.get('JWT_SECRET')
 JWT_ALGORITHM = 'HS256'
 
@@ -112,19 +115,54 @@ class MealSuggestionsRequest(BaseModel):
     available_ingredients: List[str]
 
 # Helper function to call Claude
-async def call_claude(prompt: str, session_id: str = "default") -> str:
-    try:
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=session_id,
-            system_message="You are a helpful Indian home cooking assistant."
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+# async def call_claude(prompt: str, session_id: str = "default") -> str:
+#     try:
+#         chat = LlmChat(
+#             api_key=EMERGENT_LLM_KEY,
+#             session_id=session_id,
+#             system_message="You are a helpful Indian home cooking assistant."
+#         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
         
-        user_message = UserMessage(text=prompt)
-        response = await chat.send_message(user_message)
-        return response
+#         user_message = UserMessage(text=prompt)
+#         response = await chat.send_message(user_message)
+#         return response
+#     except Exception as e:
+#         logging.error(f"Claude API error: {str(e)}")
+#         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
+
+async def call_llm(prompt: str) -> str:
+    try:
+        url = "https://api.groq.com/openai/v1/chat/completions"
+
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "model": "llama3-70b-8192",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a helpful Indian home cooking assistant."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        if response.status_code != 200:
+            raise Exception(response.text)
+
+        result = response.json()
+        return result["choices"][0]["message"]["content"]
+
     except Exception as e:
-        logging.error(f"Claude API error: {str(e)}")
+        logging.error(f"Groq API error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
 
 # API Routes
@@ -274,7 +312,7 @@ Return ONLY valid JSON (no markdown):
             prompt += """Suggest ONE Indian home-cooked dish. Return ONLY valid JSON (no markdown):
 {"dish":"name","time":"X min","reason":"one warm sentence why this fits","tags":["tag1","tag2","tag3"],"category":"dal|roti|rice|sabzi|snack|sweet|fasting|healthy"}"""
         
-        response = await call_claude(prompt, f"spin-{uuid.uuid4()}")
+        response = await call_llm(prompt, f"spin-{uuid.uuid4()}")
         
         # Parse JSON from response
         response_clean = response.strip()
@@ -305,7 +343,7 @@ async def get_recipe(req: RecipeRequest):
 Return ONLY valid JSON (no markdown):
 {{"ingredients":[{{"name":"x","qty":"Xg or X pcs"}}],"steps":["step1","step2"],"prep_time":"X min","cook_time":"X min","pro_tip":"one golden cooking tip","variation":"one quick twist idea"}}"""
         
-        response = await call_claude(prompt, f"recipe-{uuid.uuid4()}")
+        response = await call_llm(prompt, f"recipe-{uuid.uuid4()}")
         
         # Parse JSON
         response_clean = response.strip()
@@ -331,7 +369,7 @@ Return ONLY valid JSON (no markdown):
 async def get_side_dish(req: SideDishRequest):
     try:
         prompt = f'One simple Indian side dish pairing for "{req.dish}". One sentence, plain text only.'
-        response = await call_claude(prompt, f"side-{uuid.uuid4()}")
+        response = await call_llm(prompt, f"side-{uuid.uuid4()}")
         return {"suggestion": response.strip()}
     except Exception:
         return {"suggestion": "Try with raita or a simple salad."}
@@ -347,7 +385,7 @@ async def get_deduction_estimate(req: DeductionRequest):
 Return ONLY valid JSON array: [{{"name":"ingredient","qty_used":number,"unit":"g|ml|pcs|tbsp"}}]
 Only include ingredients likely to be in a home pantry. Max 8 items."""
         
-        response = await call_claude(prompt, f"deduction-{uuid.uuid4()}")
+        response = await call_llm(prompt, f"deduction-{uuid.uuid4()}")
         
         # Parse JSON
         response_clean = response.strip()
@@ -377,7 +415,7 @@ Available ingredients: {', '.join(req.available_ingredients)}.
 Return ONLY valid JSON array of exactly 4 objects (no markdown):
 [{{"name":"dish","time":"X min","tags":["tag1","tag2"],"category":"dal|roti|rice|sabzi|snack|healthy","why":"max 8 words why this suits them"}}]"""
         
-        response = await call_claude(prompt, f"meal-{uuid.uuid4()}")
+        response = await call_llm(prompt, f"meal-{uuid.uuid4()}")
         
         # Parse JSON
         response_clean = response.strip()
