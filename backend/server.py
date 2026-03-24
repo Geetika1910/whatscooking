@@ -14,6 +14,7 @@ import json
 import bcrypt
 import jwt
 import requests
+import httpx
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
@@ -130,8 +131,6 @@ class MealSuggestionsRequest(BaseModel):
 #         logging.error(f"Claude API error: {str(e)}")
 #         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
 
-import httpx
-
 async def call_llm(prompt: str, session_id: str = "default") -> str:
     try:
         url = "https://api.groq.com/openai/v1/chat/completions"
@@ -151,6 +150,13 @@ async def call_llm(prompt: str, session_id: str = "default") -> str:
         async with httpx.AsyncClient() as client:
             response = await client.post(url, headers=headers, json=data)
             result = response.json()
+
+        # 🔍 DEBUG LOG (very important)
+        print("LLM RESPONSE:", result)
+
+        # ✅ SAFE PARSING
+        if "choices" not in result:
+            raise Exception(result.get("error", "Unknown API response"))
 
         return result["choices"][0]["message"]["content"]
 
