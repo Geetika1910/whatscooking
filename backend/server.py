@@ -130,39 +130,32 @@ class MealSuggestionsRequest(BaseModel):
 #         logging.error(f"Claude API error: {str(e)}")
 #         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
 
-async def call_llm(prompt: str) -> str:
+import httpx
+
+async def call_llm(prompt: str, session_id: str = "default") -> str:
     try:
         url = "https://api.groq.com/openai/v1/chat/completions"
-
         headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Authorization": f"Bearer {os.environ['GROQ_API_KEY']}",
             "Content-Type": "application/json"
         }
 
         data = {
             "model": "llama3-70b-8192",
             "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a helpful Indian home cooking assistant."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "system", "content": "You are a helpful Indian home cooking assistant."},
+                {"role": "user", "content": prompt}
             ]
         }
 
-        response = requests.post(url, headers=headers, json=data)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=data)
+            result = response.json()
 
-        if response.status_code != 200:
-            raise Exception(response.text)
-
-        result = response.json()
         return result["choices"][0]["message"]["content"]
 
     except Exception as e:
-        logging.error(f"Groq API error: {str(e)}")
+        logging.error(f"LLM API error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
 
 # API Routes
