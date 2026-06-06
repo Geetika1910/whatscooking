@@ -66,7 +66,6 @@ const Toggle = ({ checked, onChange, testId }) => {
 
 function SpinPage() {
   const [inventory, setInventory] = useState([]);
-  const [loadingInventory, setLoadingInventory] = useState(true);
   
   // Q1 - Meal type
   const [selectedMealType, setSelectedMealType] = useState('Lunch');
@@ -121,11 +120,11 @@ function SpinPage() {
   }, []);
   
   const loadInventory = async () => {
-    setLoadingInventory(true);
     try {
       const response = await axios.get(`${API}/inventory`);
       const items = response.data;
       setInventory(items);
+      Storage.setInventory(items);
       
       // Select all items with qty > 0 by default
       const inStock = items.filter(item => item.qty > 0).map(item => item.name);
@@ -140,8 +139,6 @@ function SpinPage() {
       setInventory(inv);
       const inStock = inv.filter(item => item.qty > 0).map(item => item.name);
       setSelectedPantryItems(inStock);
-    } finally {
-      setLoadingInventory(false);
     }
   };
   
@@ -355,51 +352,16 @@ function SpinPage() {
   };
   
   const pantryChips = inventory.filter(item => item.qty > 0);
-  const displayPantry = pantryChips;
   
-  // Show empty state if inventory is empty
-  if (loadingInventory) {
-    return (
-      <div className="max-content py-8" data-testid="spin-page">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="shimmer h-8 rounded mb-4 w-32 mx-auto" />
-            <div className="shimmer h-4 rounded mb-2 w-24 mx-auto" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  if (inventory.length === 0 || displayPantry.length === 0) {
-    return (
-      <div className="max-content py-8" data-testid="spin-page">
-        <div className="mb-6">
-          <h1 className="playfair text-4xl sm:text-5xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
-            What to cook today?
-          </h1>
-          <p className="text-base" style={{ color: 'var(--muted)' }}>5 questions. One perfect answer.</p>
-        </div>
-        
-        <div className="flex flex-col items-center justify-center py-16 px-6">
-          <div className="text-6xl mb-4">🛒</div>
-          <h2 className="playfair text-2xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
-            Your inventory is empty
-          </h2>
-          <p className="text-center text-sm mb-6" style={{ color: 'var(--muted)', maxWidth: '400px' }}>
-            Add items in your inventory to spin the roulette or go to recipes section
-          </p>
-          <a
-            href="/inventory"
-            className="px-6 py-3 rounded-lg text-sm font-semibold"
-            style={{ backgroundColor: 'var(--saffron)', color: 'white', textDecoration: 'none', display: 'inline-block' }}
-          >
-            Go to Inventory
-          </a>
-        </div>
-      </div>
-    );
-  }
+  // Determine if spin button should be disabled
+  const canSpin = () => {
+    // If using "known dish" option, allow spin even without selected items
+    if (showKnownDish && knownDish.trim()) {
+      return true;
+    }
+    // Otherwise, need inventory items to be selected
+    return selectedPantryItems.length > 0;
+  };
   
   return (
     <div className="max-content py-8" data-testid="spin-page">
@@ -538,25 +500,36 @@ function SpinPage() {
             from your inventory
           </span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {displayPantry.map((item, idx) => (
-            <Chip
-              key={item.name || idx}
-              testId={`pantry-chip-${item.name}`}
-              selected={selectedPantryItems.includes(item.name)}
-              onClick={() => {
-                if (selectedPantryItems.includes(item.name)) {
-                  setSelectedPantryItems(selectedPantryItems.filter(p => p !== item.name));
-                } else {
-                  setSelectedPantryItems([...selectedPantryItems, item.name]);
-                }
-              }}
-              color="coriander"
-            >
-              {item.name}
-            </Chip>
-          ))}
-        </div>
+        
+        {/* Empty state for inventory - only in Q4 section */}
+        {pantryChips.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 px-6 rounded-lg" style={{ backgroundColor: 'var(--paper)', border: '1px dashed var(--border-strong)' }}>
+            <div className="text-3xl mb-2">🛒</div>
+            <p className="text-sm text-center" style={{ color: 'var(--muted)' }}>
+              Add items in your inventory to spin the roulette or go to <a href="/inventory" style={{ color: 'var(--saffron)', textDecoration: 'underline' }}>recipes section</a>
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {pantryChips.map((item, idx) => (
+              <Chip
+                key={item.name || idx}
+                testId={`pantry-chip-${item.name}`}
+                selected={selectedPantryItems.includes(item.name)}
+                onClick={() => {
+                  if (selectedPantryItems.includes(item.name)) {
+                    setSelectedPantryItems(selectedPantryItems.filter(p => p !== item.name));
+                  } else {
+                    setSelectedPantryItems([...selectedPantryItems, item.name]);
+                  }
+                }}
+                color="coriander"
+              >
+                {item.name}
+              </Chip>
+            ))}
+          </div>
+        )}
       </div>
       
       {/* Q5 - People */}
@@ -631,16 +604,18 @@ function SpinPage() {
       <button
         data-testid="spin-button"
         onClick={handleSpin}
-        disabled={loading || selectedPantryItems.length === 0}
+        disabled={loading || !canSpin()}
         className="w-full py-3 rounded-xl text-base font-semibold"
-        style={{ backgroundColor: 'var(--saffron)', color: 'white', opacity: selectedPantryItems.length === 0 ? 0.5 : 1 }}
+        style={{ backgroundColor: 'var(--saffron)', color: 'white', opacity: !canSpin() ? 0.5 : 1 }}
       >
         {loading ? 'Spinning...' : 'Spin the roulette'}
       </button>
       
-      {selectedPantryItems.length === 0 && (
+      {!canSpin() && (
         <p className="text-xs text-center mt-2" style={{ color: 'var(--muted)' }}>
-          Select at least one item to spin
+          {pantryChips.length === 0 
+            ? 'Add items to inventory to spin' 
+            : 'Select at least one item to spin or use "I already know what I want"'}
         </p>
       )}
       
