@@ -36,22 +36,13 @@ function InventoryPage() {
       const response = await axios.get(`${API}/inventory`);
       let items = response.data;
       
-      if (items.length === 0) {
-        // Seed default inventory
-        for (const item of defaultInventory) {
-          await axios.post(`${API}/inventory`, item);
-        }
-        items = defaultInventory;
-      }
-      
       setInventory(items);
       Storage.setInventory(items);
     } catch (err) {
       console.error('Failed to load inventory:', err);
       let inv = Storage.getInventory();
       if (!inv || inv.length === 0) {
-        inv = defaultInventory;
-        Storage.setInventory(inv);
+        inv = [];
       }
       setInventory(inv);
     }
@@ -186,173 +177,195 @@ function InventoryPage() {
         </button>
       </div>
       
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
-          <div className="text-2xl font-bold mb-1" style={{ color: 'var(--ink)' }}>{totalItems}</div>
-          <div className="text-xs" style={{ color: 'var(--muted)' }}>Total items</div>
-        </div>
-        <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
-          <div className="text-2xl font-bold mb-1" style={{ color: 'var(--turmeric)' }}>{lowStockItems}</div>
-          <div className="text-xs" style={{ color: 'var(--muted)' }}>Low stock</div>
-        </div>
-        <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
-          <div className="text-2xl font-bold mb-1" style={{ color: 'var(--saffron)' }}>{expiringItems}</div>
-          <div className="text-xs" style={{ color: 'var(--muted)' }}>Expiring soon</div>
-        </div>
-      </div>
-      
-      {/* Alert banners */}
-      {expiringList.length > 0 && (
-        <div className="p-3 rounded-lg mb-4" style={{ backgroundColor: 'var(--saffron-light)', border: '1px solid var(--saffron)' }}>
-          <p className="text-sm font-semibold" style={{ color: 'var(--saffron)' }}>
-            <strong>Expiring soon:</strong> {expiringList.join(', ')} — use these first!
+      {/* Empty state */}
+      {inventory.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 px-6">
+          <div className="text-6xl mb-4">🥘</div>
+          <h2 className="playfair text-2xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
+            Your inventory is empty
+          </h2>
+          <p className="text-center text-sm mb-6" style={{ color: 'var(--muted)', maxWidth: '400px' }}>
+            Add items in your inventory to spin the roulette or go to recipes section
           </p>
+          <button
+            onClick={openAddSheet}
+            className="px-6 py-3 rounded-lg text-sm font-semibold"
+            style={{ backgroundColor: 'var(--saffron)', color: 'white' }}
+          >
+            Add your first item
+          </button>
         </div>
-      )}
-      
-      {lowStockList.length > 0 && (
-        <div className="p-3 rounded-lg mb-4" style={{ backgroundColor: 'var(--turmeric-light)', border: '1px solid var(--turmeric)' }}>
-          <p className="text-sm font-semibold" style={{ color: 'var(--turmeric)' }}>
-            <strong>Low stock:</strong> {lowStockList.join(', ')} — consider restocking.
-          </p>
-        </div>
-      )}
-      
-      {/* Legend */}
-      <div className="flex gap-4 mb-6 text-xs" style={{ color: 'var(--muted)' }}>
-        <div className="flex items-center gap-1">
-          <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--coriander)' }} />
-          In stock
-        </div>
-        <div className="flex items-center gap-1">
-          <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--turmeric)' }} />
-          Low stock
-        </div>
-        <div className="flex items-center gap-1">
-          <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--saffron)' }} />
-          Expiring soon
-        </div>
-        <div className="flex items-center gap-1">
-          <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--subtle)' }} />
-          Out of stock
-        </div>
-      </div>
-      
-      {/* Inventory list */}
-      {groupedInventory.map(group => (
-        <div key={group.category} className="mb-6">
-          <h3 className="text-xs uppercase tracking-wide font-semibold mb-3" style={{ color: 'var(--subtle)' }}>
-            {group.category}
-          </h3>
-          {group.items.map(item => {
-            const status = statusOf(item);
-            const isDeleting = deleteConfirm === item.id;
-            
-            if (isDeleting) {
-              return (
-                <div key={item.id} className="p-4 rounded-xl mb-3 flex items-center justify-between" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
-                  <span className="text-sm" style={{ color: 'var(--ink)' }}>Delete {item.name}?</span>
-                  <div className="flex gap-2">
-                    <button
-                      data-testid={`delete-cancel-${item.id}`}
-                      onClick={() => setDeleteConfirm(null)}
-                      className="px-3 py-1 rounded-lg text-xs font-medium"
-                      style={{ backgroundColor: 'transparent', color: 'var(--ink)', border: '1px solid var(--border-strong)' }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      data-testid={`delete-confirm-${item.id}`}
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="px-3 py-1 rounded-lg text-xs font-medium"
-                      style={{ backgroundColor: 'var(--saffron)', color: 'white' }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-            
-            return (
-              <div
-                key={item.id}
-                data-testid={`inventory-item-${item.id}`}
-                className="p-4 rounded-xl mb-3"
-                style={{
-                  backgroundColor: getStatusBg(status),
-                  border: `1px solid ${status === 'low' ? 'var(--turmeric)' : status === 'expiring' ? 'var(--saffron)' : 'var(--border-strong)'}`,
-                  opacity: status === 'out' ? 0.52 : 1,
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: getStatusColor(status), marginTop: '5px', flexShrink: 0 }} />
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-1">
-                      <h4 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{item.name}</h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--paper)', color: getStatusColor(status) }}>
-                          {getStatusLabel(status)}
-                        </span>
+      ) : (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
+              <div className="text-2xl font-bold mb-1" style={{ color: 'var(--ink)' }}>{totalItems}</div>
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Total items</div>
+            </div>
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
+              <div className="text-2xl font-bold mb-1" style={{ color: 'var(--turmeric)' }}>{lowStockItems}</div>
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Low stock</div>
+            </div>
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
+              <div className="text-2xl font-bold mb-1" style={{ color: 'var(--saffron)' }}>{expiringItems}</div>
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Expiring soon</div>
+            </div>
+          </div>
+          
+          {/* Alert banners */}
+          {expiringList.length > 0 && (
+            <div className="p-3 rounded-lg mb-4" style={{ backgroundColor: 'var(--saffron-light)', border: '1px solid var(--saffron)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--saffron)' }}>
+                <strong>Expiring soon:</strong> {expiringList.join(', ')} — use these first!
+              </p>
+            </div>
+          )}
+          
+          {lowStockList.length > 0 && (
+            <div className="p-3 rounded-lg mb-4" style={{ backgroundColor: 'var(--turmeric-light)', border: '1px solid var(--turmeric)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--turmeric)' }}>
+                <strong>Low stock:</strong> {lowStockList.join(', ')} — consider restocking.
+              </p>
+            </div>
+          )}
+          
+          {/* Legend */}
+          <div className="flex gap-4 mb-6 text-xs" style={{ color: 'var(--muted)' }}>
+            <div className="flex items-center gap-1">
+              <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--coriander)' }} />
+              In stock
+            </div>
+            <div className="flex items-center gap-1">
+              <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--turmeric)' }} />
+              Low stock
+            </div>
+            <div className="flex items-center gap-1">
+              <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--saffron)' }} />
+              Expiring soon
+            </div>
+            <div className="flex items-center gap-1">
+              <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--subtle)' }} />
+              Out of stock
+            </div>
+          </div>
+          
+          {/* Inventory list */}
+          {groupedInventory.map(group => (
+            <div key={group.category} className="mb-6">
+              <h3 className="text-xs uppercase tracking-wide font-semibold mb-3" style={{ color: 'var(--subtle)' }}>
+                {group.category}
+              </h3>
+              {group.items.map(item => {
+                const status = statusOf(item);
+                const isDeleting = deleteConfirm === item.id;
+                
+                if (isDeleting) {
+                  return (
+                    <div key={item.id} className="p-4 rounded-xl mb-3 flex items-center justify-between" style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--border-strong)' }}>
+                      <span className="text-sm" style={{ color: 'var(--ink)' }}>Delete {item.name}?</span>
+                      <div className="flex gap-2">
                         <button
-                          data-testid={`edit-item-${item.id}`}
-                          onClick={() => openEditSheet(item)}
-                          className="text-xs font-medium"
-                          style={{ color: 'var(--saffron)' }}
+                          data-testid={`delete-cancel-${item.id}`}
+                          onClick={() => setDeleteConfirm(null)}
+                          className="px-3 py-1 rounded-lg text-xs font-medium"
+                          style={{ backgroundColor: 'transparent', color: 'var(--ink)', border: '1px solid var(--border-strong)' }}
                         >
-                          Edit
+                          Cancel
                         </button>
                         <button
-                          data-testid={`delete-item-${item.id}`}
-                          onClick={() => setDeleteConfirm(item.id)}
-                          className="text-xs font-medium"
-                          style={{ color: 'var(--saffron)' }}
+                          data-testid={`delete-confirm-${item.id}`}
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="px-3 py-1 rounded-lg text-xs font-medium"
+                          style={{ backgroundColor: 'var(--saffron)', color: 'white' }}
                         >
                           Delete
                         </button>
                       </div>
                     </div>
-                    <div className="text-xs mb-1" style={{ color: 'var(--subtle)' }}>
-                      {editingQty === item.id ? (
-                        <input
-                          type="number"
-                          autoFocus
-                          defaultValue={item.qty}
-                          onBlur={(e) => {
-                            const newQty = parseFloat(e.target.value) || 0;
-                            handleInlineQtyUpdate(item, newQty);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              const newQty = parseFloat(e.target.value) || 0;
-                              handleInlineQtyUpdate(item, newQty);
-                            } else if (e.key === 'Escape') {
-                              setEditingQty(null);
-                            }
-                          }}
-                          className="w-20 px-2 py-0.5 text-xs rounded"
-                          style={{ border: '1px dashed var(--border-strong)' }}
-                        />
-                      ) : (
-                        <button
-                          data-testid={`qty-edit-${item.id}`}
-                          onClick={() => setEditingQty(item.id)}
-                          style={{ borderBottom: '1px dashed var(--border-strong)', cursor: 'pointer' }}
-                        >
-                          {item.qty}{item.unit}
-                        </button>
-                      )}
-                      {' '} · alert &lt;{item.threshold}{item.unit}
-                      {item.expiry && ` · Exp ${item.expiry}`}
+                  );
+                }
+                
+                return (
+                  <div
+                    key={item.id}
+                    data-testid={`inventory-item-${item.id}`}
+                    className="p-4 rounded-xl mb-3"
+                    style={{
+                      backgroundColor: getStatusBg(status),
+                      border: `1px solid ${status === 'low' ? 'var(--turmeric)' : status === 'expiring' ? 'var(--saffron)' : 'var(--border-strong)'}`,
+                      opacity: status === 'out' ? 0.52 : 1,
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: getStatusColor(status), marginTop: '5px', flexShrink: 0 }} />
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-1">
+                          <h4 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{item.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--paper)', color: getStatusColor(status) }}>
+                              {getStatusLabel(status)}
+                            </span>
+                            <button
+                              data-testid={`edit-item-${item.id}`}
+                              onClick={() => openEditSheet(item)}
+                              className="text-xs font-medium"
+                              style={{ color: 'var(--saffron)' }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              data-testid={`delete-item-${item.id}`}
+                              onClick={() => setDeleteConfirm(item.id)}
+                              className="text-xs font-medium"
+                              style={{ color: 'var(--saffron)' }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-xs mb-1" style={{ color: 'var(--subtle)' }}>
+                          {editingQty === item.id ? (
+                            <input
+                              type="number"
+                              autoFocus
+                              defaultValue={item.qty}
+                              onBlur={(e) => {
+                                const newQty = parseFloat(e.target.value) || 0;
+                                handleInlineQtyUpdate(item, newQty);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const newQty = parseFloat(e.target.value) || 0;
+                                  handleInlineQtyUpdate(item, newQty);
+                                } else if (e.key === 'Escape') {
+                                  setEditingQty(null);
+                                }
+                              }}
+                              className="w-20 px-2 py-0.5 text-xs rounded"
+                              style={{ border: '1px dashed var(--border-strong)' }}
+                            />
+                          ) : (
+                            <button
+                              data-testid={`qty-edit-${item.id}`}
+                              onClick={() => setEditingQty(item.id)}
+                              style={{ borderBottom: '1px dashed var(--border-strong)', cursor: 'pointer' }}
+                            >
+                              {item.qty}{item.unit}
+                            </button>
+                          )}
+                          {' '} · alert &lt;{item.threshold}{item.unit}
+                          {item.expiry && ` · Exp ${item.expiry}`}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
+                );
+              })}
+            </div>
+          ))}
+        </>
+      )}
       
       {/* Add item sheet */}
       {showAddSheet && (
