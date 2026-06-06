@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Storage } from '../utils/storage';
-import { defaultInventory } from '../utils/defaultInventory';
 import { statusOf, getStatusColor, getStatusBg, getStatusLabel } from '../utils/itemStatus';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -180,12 +179,12 @@ function InventoryPage() {
       {/* Empty state */}
       {inventory.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-6">
-          <div className="text-6xl mb-4">🥘</div>
+          <div className="text-6xl mb-4">🍳</div>
           <h2 className="playfair text-2xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
-            Your inventory is empty
+            Start adding items
           </h2>
           <p className="text-center text-sm mb-6" style={{ color: 'var(--muted)', maxWidth: '400px' }}>
-            Add items in your inventory to spin the roulette or go to recipes section
+            Start adding items present in your kitchen, pantry or fridge.
           </p>
           <button
             onClick={openAddSheet}
@@ -407,7 +406,7 @@ function InventoryPage() {
                   className="w-full px-3 py-2 text-sm rounded-lg"
                   style={{ border: '1px solid var(--border-strong)' }}
                 >
-                  {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  {['Dals', 'Grains', 'Vegetables', 'Dairy', 'Dry Staples', 'Spices', 'Snacks', 'Other'].map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
               
@@ -530,7 +529,7 @@ function InventoryPage() {
                   className="w-full px-3 py-2 text-sm rounded-lg"
                   style={{ border: '1px solid var(--border-strong)' }}
                 >
-                  {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  {['Dals', 'Grains', 'Vegetables', 'Dairy', 'Dry Staples', 'Spices', 'Snacks', 'Other'].map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
               
