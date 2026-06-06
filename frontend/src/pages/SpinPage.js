@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Storage } from '../utils/storage';
-import { defaultInventory } from '../utils/defaultInventory';
 import { statusOf, getStatusColor } from '../utils/itemStatus';
 import BookmarkButton from '../components/BookmarkButton';
 import IngredientsList from '../components/IngredientsList';
@@ -67,6 +66,7 @@ const Toggle = ({ checked, onChange, testId }) => {
 
 function SpinPage() {
   const [inventory, setInventory] = useState([]);
+  const [loadingInventory, setLoadingInventory] = useState(true);
   
   // Q1 - Meal type
   const [selectedMealType, setSelectedMealType] = useState('Lunch');
@@ -121,6 +121,7 @@ function SpinPage() {
   }, []);
   
   const loadInventory = async () => {
+    setLoadingInventory(true);
     try {
       const response = await axios.get(`${API}/inventory`);
       const items = response.data;
@@ -131,19 +132,16 @@ function SpinPage() {
       setSelectedPantryItems(inStock);
     } catch (err) {
       console.error('Failed to load inventory:', err);
-      // Use localStorage fallback
+      // Use localStorage fallback - NO DEFAULT INVENTORY
       let inv = Storage.getInventory();
       if (!inv) {
-        inv = defaultInventory;
-        Storage.setInventory(inv);
-        // Also sync to backend
-        inv.forEach(async (item) => {
-          await axios.post(`${API}/inventory`, item);
-        });
+        inv = [];
       }
       setInventory(inv);
       const inStock = inv.filter(item => item.qty > 0).map(item => item.name);
       setSelectedPantryItems(inStock);
+    } finally {
+      setLoadingInventory(false);
     }
   };
   
@@ -357,8 +355,51 @@ function SpinPage() {
   };
   
   const pantryChips = inventory.filter(item => item.qty > 0);
-  const fallbackPantry = ['Flour', 'Dal', 'Rice', 'Potato', 'Onion', 'Tomato'];
-  const displayPantry = pantryChips.length > 0 ? pantryChips : fallbackPantry.map(name => ({ name }));
+  const displayPantry = pantryChips;
+  
+  // Show empty state if inventory is empty
+  if (loadingInventory) {
+    return (
+      <div className="max-content py-8" data-testid="spin-page">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="shimmer h-8 rounded mb-4 w-32 mx-auto" />
+            <div className="shimmer h-4 rounded mb-2 w-24 mx-auto" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (inventory.length === 0 || displayPantry.length === 0) {
+    return (
+      <div className="max-content py-8" data-testid="spin-page">
+        <div className="mb-6">
+          <h1 className="playfair text-4xl sm:text-5xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
+            What to cook today?
+          </h1>
+          <p className="text-base" style={{ color: 'var(--muted)' }}>5 questions. One perfect answer.</p>
+        </div>
+        
+        <div className="flex flex-col items-center justify-center py-16 px-6">
+          <div className="text-6xl mb-4">🛒</div>
+          <h2 className="playfair text-2xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
+            Your inventory is empty
+          </h2>
+          <p className="text-center text-sm mb-6" style={{ color: 'var(--muted)', maxWidth: '400px' }}>
+            Add items in your inventory to spin the roulette or go to recipes section
+          </p>
+          <a
+            href="/inventory"
+            className="px-6 py-3 rounded-lg text-sm font-semibold"
+            style={{ backgroundColor: 'var(--saffron)', color: 'white', textDecoration: 'none', display: 'inline-block' }}
+          >
+            Go to Inventory
+          </a>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="max-content py-8" data-testid="spin-page">
@@ -590,12 +631,18 @@ function SpinPage() {
       <button
         data-testid="spin-button"
         onClick={handleSpin}
-        disabled={loading}
+        disabled={loading || selectedPantryItems.length === 0}
         className="w-full py-3 rounded-xl text-base font-semibold"
-        style={{ backgroundColor: 'var(--saffron)', color: 'white' }}
+        style={{ backgroundColor: 'var(--saffron)', color: 'white', opacity: selectedPantryItems.length === 0 ? 0.5 : 1 }}
       >
         {loading ? 'Spinning...' : 'Spin the roulette'}
       </button>
+      
+      {selectedPantryItems.length === 0 && (
+        <p className="text-xs text-center mt-2" style={{ color: 'var(--muted)' }}>
+          Select at least one item to spin
+        </p>
+      )}
       
       {/* Loading skeleton */}
       {loading && (
